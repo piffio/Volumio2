@@ -59,7 +59,8 @@ function CoreCommandRouter(server) {
     this.pluginManager.pluginFolderCleanup();
     this.configManager=new(require(__dirname+'/configManager.js'))(this.logger);
 
-    this.pluginManager.startPlugins();
+    this.pluginLoader = new (require(__dirname + '/pluginloader.js'))(this, server);
+    this.pluginLoader.startPlugins();
 
     this.loadI18nStrings();
     this.musicLibrary.updateBrowseSourcesLang();
@@ -1204,26 +1205,26 @@ CoreCommandRouter.prototype.pushAirplay = function (data) {
 // This allows to change system commands across different devices\environments
 CoreCommandRouter.prototype.shutdown = function () {
 	var self = this;
-	
+
 	self.pluginManager.onVolumioShutdown().then( function() {
 		self.platformspecific.shutdown();
 	}).fail(function(e){
 		self.logger.info("Error in onVolumioShutdown Plugin Promise handling: "+ e);
 		self.platformspecific.shutdown();
 	});
-	
+
 };
 
 CoreCommandRouter.prototype.reboot = function () {
 	var self = this;
-	
+
 	self.pluginManager.onVolumioReboot().then( function() {
 		 self.platformspecific.reboot();
 	}).fail(function(e){
 		self.logger.info("Error in onVolumioReboot Plugin Promise handling: "+ e);
 		self.platformspecific.reboot();
 	});
-	
+
 };
 
 CoreCommandRouter.prototype.networkRestart = function () {
@@ -1601,7 +1602,7 @@ CoreCommandRouter.prototype.loadI18nStrings = function () {
               var pluginI18NFile = instance.getI18nFile(language_code);
               if (pluginI18NFile && fs.pathExistsSync(pluginI18NFile)) {
                 var pluginI18nStrings = fs.readJSONSync(pluginI18NFile);
-      
+
                 for (var locale in pluginI18nStrings) {
                   // check if locale does not already exist to avoid that volumio
                   // strings get overwritten
